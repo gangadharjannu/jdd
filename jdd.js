@@ -581,21 +581,21 @@ var jdd = {
             $(pre).replaceWith(codeBlock);
         });
     },
-
+// TODO
     /**
      * Format the text edits which handle the JSON input
      */
     formatTextAreas: function () {
-        _.each($('textarea'), function (textarea) {
-            var codeBlock = $('<div class="codeBlock"></div>');
-            var lineNumbers = $('<div class="gutter"></div>');
-            codeBlock.append(lineNumbers);
+        _.each(document.createRange().createContextualFragment('textarea'), function (textarea) {
+            var codeBlock = document.createRange().createContextualFragment('<div class="codeBlock"></div>');
+            var lineNumbers = document.createRange().createContextualFragment('<div class="gutter"></div>');
+            codeBlock.appendChild(lineNumbers);
 
             var addLine = function (line, index) {
-                lineNumbers.append($('<span class="line-number">' + (index + 1) + '.</span>'));
+                lineNumbers.append(document.createRange().createContextualFragment('<span class="line-number">' + (index + 1) + '.</span>'));
             };
 
-            var lines = $(textarea).val().split('\n');
+            var lines = textarea.value.split('\n');
             _.each(lines, addLine);
 
             $(textarea).replaceWith(codeBlock);
@@ -613,14 +613,17 @@ var jdd = {
                 return line === diff.path1.line || line === diff.path2.line;
             }
         });
-
-        $('pre.left span.code').removeClass('selected');
-        $('pre.right span.code').removeClass('selected');
-        $('ul.toolbar').text('');
+        Array.prototype.forEach.call(document.querySelectorAll('pre.left span.code'), function (elem) {
+            elem.classList.remove('selected');
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('pre.right span.code'), function (elem) {
+            elem.classList.remove('selected');
+        });
+        document.querySelector('ul.toolbar').textContent = '';
 
         _.each(diffs, function (diff) {
-            $('pre.left div.line' + diff.path1.line + ' span.code').addClass('selected');
-            $('pre.right div.line' + diff.path2.line + ' span.code').addClass('selected');
+            document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').classList.add('selected');
+            document.querySelector('pre.right div.line' + diff.path2.line + ' span.code').classList.add('selected');
         });
 
         if (side === jdd.LEFT || side === jdd.RIGHT) {
@@ -635,21 +638,20 @@ var jdd = {
             });
         }
 
-        var buttons = $('<div id="buttons"><div>');
-        var prev = $('<a href="#" title="Previous difference" id="prevButton">&lt;</a>');
-        prev.addClass('disabled');
-        prev.click(function (e) {
-            e.preventDefault();
-            jdd.highlightPrevDiff();
-        });
-        buttons.append(prev);
+        var buttons = document.createRange().createContextualFragment('<div id="buttons"><div>');
+        var prev = document.createRange().createContextualFragment('<a href="#" title="Previous difference" class="disabled" id="prevButton">&lt;</a>');
 
-        buttons.append('<span id="prevNextLabel"></span>');
+        buttons.appendChild(prev);
+        buttons.appendChild(document.createRange().createContextualFragment('<span id="prevNextLabel"></span>'));
+        var next = document.createRange().createContextualFragment('<a href="#" title="Next difference" id="nextButton">&gt;</a>');
+        buttons.appendChild(next);
 
-        var next = $('<a href="#" title="Next difference" id="nextButton">&gt;</a>');
-        next.click(function (e) {
-            e.preventDefault();
-            jdd.highlightNextDiff();
+        document.querySelector('ul.toolbar').appendChild(buttons);
+        Array.prototype.slice.call(document.querySelector('ul.toolbar').querySelectorAll('a')).forEach(function (elem) {
+            elem.addEventListener('click', function (evt) {
+                evt.preventDefault();
+                evt.target.id === 'nextButton' ? jdd.highlightNextDiff() : jdd.highlightPrevDiff();
+            })
         });
         buttons.append(next);
 
@@ -680,15 +682,15 @@ var jdd = {
     },
 
     updateButtonStyles: function () {
-        $('#prevButton').removeClass('disabled');
-        $('#nextButton').removeClass('disabled');
+        document.getElementById('prevButton').classList.remove('disabled');
+        document.getElementById('nextButton').classList.remove('disabled');
 
         $('#prevNextLabel').text((jdd.currentDiff + 1) + ' of ' + (jdd.diffs.length));
 
         if (jdd.currentDiff === 1) {
-            $('#prevButton').addClass('disabled');
+            document.getElementById('prevButton').classList.add('disabled');
         } else if (jdd.currentDiff === jdd.diffs.length - 1) {
-            $('#nextButton').addClass('disabled');
+            document.getElementById('nextButton').classList.add('disabled');
         }
     },
 
@@ -704,17 +706,17 @@ var jdd = {
      */
     showDiffDetails: function (diffs) {
         _.each(diffs, function (diff) {
-            var li = $('<li></li>');
-            li.html(diff.msg);
-            $('ul.toolbar').append(li);
-
-            li.click(function () {
-                jdd.scrollToDiff(diff);
+            var li = document.createRange().createContextualFragment('<li>' + diff.msg + '</li>');
+            document.querySelector('ul.toolbar').appendChild(li);
+            document.querySelector('ul.toolbar').addEventListener('click', function (event) {
+                if (event && event.target.nodeName === 'LI') {
+                    jdd.scrollToDiff(diff);
+                }
             });
-
         });
     },
 
+    // TODO
     /**
      * Scroll the specified diff to be visible
      */
@@ -1039,7 +1041,7 @@ var jdd = {
             if (toolbarTop < $(window).scrollTop()) {
                 document.getElementById('toolbar').setAttribute('style', 'position:fixed;top:10px');
             } else {
-                document.getElementById('toolbar').setAttribute('position:absolute;top:""');
+                document.getElementById('toolbar').setAttribute('style', 'position:absolute;top:""');
             }
         });
 
