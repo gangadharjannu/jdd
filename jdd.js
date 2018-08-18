@@ -553,35 +553,38 @@ var jdd = {
      * Format the output pre tags.
      */
     formatPRETags: function () {
-        _.each($('pre'), function (pre) {
-            var codeBlock = $('<pre class="codeBlock"></pre>');
-            var lineNumbers = $('<div class="gutter"></div>');
-            codeBlock.append(lineNumbers);
+        _.each(document.getElementsByTagName('pre'), function (pre) {
+            var codeBlock = document.createElement('pre');
+            codeBlock.className = 'codeBlock';
+            var lineNumbers = document.createElement('div');
+            lineNumbers.className = 'gutter';
+            codeBlock.appendChild(lineNumbers);
 
-            var codeLines = $('<div></div>');
-            codeBlock.append(codeLines);
+            var codeLines = document.createElement('div');
+            codeBlock.appendChild(codeLines);
 
             var addLine = function (line, index) {
-                var div = $('<div class="codeLine line' + (index + 1) + '"></div>');
-                lineNumbers.append($('<span class="line-number">' + (index + 1) + '.</span>'));
-
-                var span = $('<span class="code"></span');
-                span.text(line);
-                div.append(span);
-
-                codeLines.append(div);
+                lineNumbers.appendChild(document.createRange().createContextualFragment('<span class="line-number">' + (index + 1) + '.</span>'));
+                var div = '<div class="codeLine line' + (index + 1) + '">' +
+                    '<span class="code">' + line + '</span>' +
+                    '</div>';
+                codeLines.appendChild(document.createRange().createContextualFragment(div));
             };
 
-            var lines = $(pre).text().split('\n');
+            var lines = pre.textContent.split('\n');
             _.each(lines, addLine);
 
-            codeBlock.addClass($(pre).attr('class'));
-            codeBlock.attr('id', $(pre).attr('id'));
+            codeBlock.className += (' ' + pre.className);
+            codeBlock.id = pre.id;
 
-            $(pre).replaceWith(codeBlock);
+            pre.replaceWith(codeBlock);
+            // pre.parentNode.replaceChild(codeBlock, pre);
+            // pre.parentNode.replaceChild(document.createElement("span"), A);
+
+            // pre.insertBefore(codeBlock, pre.firstChild);
         });
     },
-// TODO
+    // TODO: testing pending
     /**
      * Format the text edits which handle the JSON input
      */
@@ -592,13 +595,13 @@ var jdd = {
             codeBlock.appendChild(lineNumbers);
 
             var addLine = function (line, index) {
-                lineNumbers.append(document.createRange().createContextualFragment('<span class="line-number">' + (index + 1) + '.</span>'));
+                lineNumbers.appendChild(document.createRange().createContextualFragment('<span class="line-number">' + (index + 1) + '.</span>'));
             };
 
             var lines = textarea.value.split('\n');
             _.each(lines, addLine);
 
-            $(textarea).replaceWith(codeBlock);
+            textarea.replaceWith(codeBlock);
             codeBlock.append(textarea);
         });
     },
@@ -621,7 +624,7 @@ var jdd = {
         });
         document.querySelector('ul.toolbar').textContent = '';
 
-        _.each(diffs, function (diff) {
+        _.each(diffs, function (diff, idx) {
             document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').classList.add('selected');
             document.querySelector('pre.right div.line' + diff.path2.line + ' span.code').classList.add('selected');
         });
@@ -638,24 +641,21 @@ var jdd = {
             });
         }
 
-        var buttons = document.createRange().createContextualFragment('<div id="buttons"><div>');
-        var prev = document.createRange().createContextualFragment('<a href="#" title="Previous difference" class="disabled" id="prevButton">&lt;</a>');
-
-        buttons.appendChild(prev);
-        buttons.appendChild(document.createRange().createContextualFragment('<span id="prevNextLabel"></span>'));
-        var next = document.createRange().createContextualFragment('<a href="#" title="Next difference" id="nextButton">&gt;</a>');
-        buttons.appendChild(next);
-
+        var buttons = document.createRange().createContextualFragment('<div id="buttons">' +
+            '<div></div>' +
+            '<a href="#" title="Previous difference" class="disabled" id="prevButton">&lt;</a>' +
+            '<span id="prevNextLabel"></span>' +
+            '<a href="#" title="Next difference" id="nextButton">&gt;</a>' +
+            '<div>');
         document.querySelector('ul.toolbar').appendChild(buttons);
-        Array.prototype.slice.call(document.querySelector('ul.toolbar').querySelectorAll('a')).forEach(function (elem) {
-            elem.addEventListener('click', function (evt) {
-                evt.preventDefault();
-                evt.target.id === 'nextButton' ? jdd.highlightNextDiff() : jdd.highlightPrevDiff();
-            })
+        document.querySelector('ul.toolbar #nextButton').addEventListener('click', function (event) {
+            event.preventDefault();
+            jdd.highlightNextDiff()
         });
-        buttons.append(next);
-
-        $('ul.toolbar').append(buttons);
+        document.querySelector('ul.toolbar #prevButton').addEventListener('click', function (event) {
+            event.preventDefault();
+            jdd.highlightPrevDiff();
+        });
         jdd.updateButtonStyles();
 
         jdd.showDiffDetails(diffs);
@@ -685,7 +685,7 @@ var jdd = {
         document.getElementById('prevButton').classList.remove('disabled');
         document.getElementById('nextButton').classList.remove('disabled');
 
-        $('#prevNextLabel').text((jdd.currentDiff + 1) + ' of ' + (jdd.diffs.length));
+        document.getElementById('prevNextLabel').textContent = ((jdd.currentDiff + 1) + ' of ' + (jdd.diffs.length));
 
         if (jdd.currentDiff === 1) {
             document.getElementById('prevButton').classList.add('disabled');
@@ -705,13 +705,11 @@ var jdd = {
      * Show the details of the specified diff
      */
     showDiffDetails: function (diffs) {
-        _.each(diffs, function (diff) {
+        _.each(diffs, function (diff, idx) {
             var li = document.createRange().createContextualFragment('<li>' + diff.msg + '</li>');
             document.querySelector('ul.toolbar').appendChild(li);
-            document.querySelector('ul.toolbar').addEventListener('click', function (event) {
-                if (event && event.target.nodeName === 'LI') {
-                    jdd.scrollToDiff(diff);
-                }
+            document.querySelectorAll('ul.toolbar li')[idx].addEventListener('click', function (event) {
+                jdd.scrollToDiff(diff);
             });
         });
     },
@@ -721,11 +719,12 @@ var jdd = {
      * Scroll the specified diff to be visible
      */
     scrollToDiff: function (diff) {
-        $('html, body').animate({
-            scrollTop: $('pre.left div.line' + diff.path1.line + ' span.code').offset().top
-        }, 0);
+        // scrollTo(document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').getBoundingClientRect().top, 0);
+        document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').scrollIntoView(true);
+        // $('html, body').animate({
+        //     scrollTop: $('pre.left div.line' + diff.path1.line + ' span.code').offset().top
+        // }, 0);
     },
-    // TODO: 08082018
     /**
      * Process the specified diff
      */
@@ -827,13 +826,10 @@ var jdd = {
 
         var newDiff = document.createRange().createContextualFragment('<button>Perform a new diff</button>');
         report.appendChild(newDiff);
-        report.querySelector('button').addEventListener('click', function () {
-            jdd.setupNewDiff();
-        });
 
         if (jdd.diffs.length === 0) {
-            report.append('<span>The two files were semantically  identical.</span>');
-            return;
+            report.appendChild(document.createRange().createContextualFragment('<span>The two files were semantically  identical.</span>'));
+            return false;
         }
 
         var typeCount = 0;
@@ -850,13 +846,10 @@ var jdd = {
             }
         });
 
-        var title = $('<div class="reportTitle"></div>');
-        if (jdd.diffs.length === 1) {
-            title.text('Found ' + (jdd.diffs.length) + ' difference');
-        } else {
-            title.text('Found ' + (jdd.diffs.length) + ' differences');
-        }
-
+        var title = document.createRange().createContextualFragment('<div class="reportTitle">' +
+            (jdd.diffs.length === 1 ? ('Found ' + (jdd.diffs.length) + ' difference')
+                : ('Found ' + (jdd.diffs.length) + ' differences')) +
+            '</div>');
         report.prepend(title);
 
         var filterBlock = document.createRange().createContextualFragment('<span class="filterBlock">Show:</span>');
@@ -865,69 +858,75 @@ var jdd = {
          * The missing checkbox
          */
         if (missingCount > 0) {
-            var missing = document.createRange().createContextualFragment('<label><input id="showMissing" type="checkbox" name="checkbox" value="value" checked="true"></label>');
-            if (missingCount === 1) {
-                missing.appendChild(document.createTextNode(missingCount + ' missing property'));
-            } else {
-                missing.appendChild(document.createTextNode(missingCount + ' missing properties'));
-            }
-            missing.querySelector('input').addEventListener('click', function () {
-                if (!$(this).prop('checked')) {
-                    document.querySelector('span.code.diff.missing').classList.add('missing_off').
-                        document.querySelector('span.code.diff.missing').classList.remove('missing');
-                } else {
-                    document.querySelector('span.code.diff.missing_off').classList.add('missing').
-                        document.querySelector('span.code.diff.missing_off').classList.remove('missing_off');
-                }
-            });
-            filterBlock.append(missing);
+            var missing = document.createRange().createContextualFragment('<label><input id="showMissing" type="checkbox" name="checkbox" value="value" checked="true">' +
+                (missingCount + (missingCount === 1 ? ' missing property' : ' missing properties')) +
+                '</label>');
+            filterBlock.appendChild(missing);
         }
 
         /*
          * The types checkbox
          */
         if (typeCount > 0) {
-            var types = $('<label><input id="showTypes" type="checkbox" name="checkbox" value="value" checked="true"></label>');
-            if (typeCount === 1) {
-                types.append(typeCount + ' incorrect type');
-            } else {
-                types.append(typeCount + ' incorrect types');
-            }
-
-            types.children('input').click(function () {
-                if (!$(this).prop('checked')) {
-                    $('span.code.diff.type').addClass('type_off').removeClass('type');
-                } else {
-                    $('span.code.diff.type_off').addClass('type').removeClass('type_off');
-                }
-            });
-            filterBlock.append(types);
+            var types = document.createRange().createContextualFragment('<label><input id="showTypes" type="checkbox" name="checkbox" value="value" checked="true">' +
+                (typeCount + (typeCount === 1 ? ' incorrect type' : ' incorrect types')) +
+                '</label>');
+            filterBlock.appendChild(types);
         }
         /*
          * The equals checkbox
          */
         if (eqCount > 0) {
-            var eq = document.createRange().createContextualFragment('<label><input id="showEq" type="checkbox" name="checkbox" value="value" checked="true"></label>');
-            if (eqCount === 1) {
-                eq.appendChild(document.createTextNode(eqCount + ' unequal value'));
-            } else {
-                eq.appendChild(document.createTextNode(eqCount + ' unequal values'));
-            }
-            eq.querySelector('input').addEventListener('click', function () {
-                if (!this.checked) {
-                    document.querySelector('span.code.diff.eq').classList.add('eq_off');
-                    document.querySelector('span.code.diff.eq').classList.remove('eq');
-                } else {
-                    document.querySelector('span.code.diff.eq_off').classList.add('eq');
-                    document.querySelector('span.code.diff.eq_off').classList.remove('eq_off');
-                }
-            });
+            var eq = document.createRange().createContextualFragment('<label><input id="showEq" type="checkbox" name="checkbox" value="value" checked="true">' +
+                (eqCount + (eqCount === 1 ? ' unequal value' : ' unequal values')) +
+                '</label>');
             filterBlock.appendChild(eq);
         }
-
         report.appendChild(filterBlock);
+        // click events
+        report.querySelector('button').addEventListener('click', function () {
+            jdd.setupNewDiff();
+        });
 
-
+        missingCount > 0 && report.querySelector('input#showMissing').addEventListener('click', function (event) {
+            if (!event.target.checked) {
+                Array.prototype.slice.call(document.querySelectorAll('span.code.diff.missing')).forEach(function (elem) {
+                    elem.classList.add('missing_off');
+                    elem.classList.remove('missing');
+                })
+            } else {
+                Array.prototype.slice.call(document.querySelectorAll('span.code.diff.missing_off')).forEach(function (elem) {
+                    elem.classList.add('missing');
+                    elem.classList.remove('missing_off');
+                });
+            }
+        });
+        typeCount > 0 && report.querySelector('input#showTypes').addEventListener('click', function (event) {
+            if (!event.target.checked) {
+                Array.prototype.slice.call(document.querySelectorAll('span.code.diff.type')).forEach(function (elem) {
+                    elem.classList.add('type_off')
+                    elem.classList.remove('type');
+                });
+            } else {
+                Array.prototype.slice.call(document.querySelectorAll('span.code.diff.type_off')).forEach(function (elem) {
+                    elem.classList.add('type');
+                    elem.classList.remove('type_off');
+                });
+            }
+        });
+        eqCount > 0 && report.querySelector('input#showEq').addEventListener('click', function (event) {
+            if (!this.checked) {
+                Array.prototype.slice.call(document.querySelectorAll('span.code.diff.eq')).forEach(function (elem) {
+                    elem.classList.add('eq_off');
+                    elem.classList.remove('eq');
+                });
+            } else {
+                Array.prototype.slice.call(document.querySelectorAll('span.code.diff.eq_off')).forEach(function (elem) {
+                    elem.classList.add('eq');
+                    elem.classList.remove('eq_off');
+                });
+            }
+        });
     },
 
     /**
@@ -1008,7 +1007,6 @@ var jdd = {
         jdd.formatAndDecorate(config2, right);
 
         document.getElementById('out2').textContent = config2.out;
-        // TODO: 
         jdd.formatPRETags();
 
         config.currentPath = [];
@@ -1035,10 +1033,11 @@ var jdd = {
          */
 
         // TODO: 
-        var toolbarTop = $('#toolbar').offset().top - 15;
-
-        $(window).scroll(function () {
-            if (toolbarTop < $(window).scrollTop()) {
+        var toolbarTop = document.getElementById('toolbar').getBoundingClientRect().top - 15;
+        debugger;
+        var scrollTop = window.scrollY || window.pageYOffset || document.body.scrollTop + (document.documentElement && document.documentElement.scrollTop || 0);
+        window.scroll(function () {
+            if (toolbarTop < scrollTop) {
                 document.getElementById('toolbar').setAttribute('style', 'position:fixed;top:10px');
             } else {
                 document.getElementById('toolbar').setAttribute('style', 'position:absolute;top:""');
@@ -1127,4 +1126,86 @@ function ajax(url, data, callback, x) {
     } catch (e) {
         window.console && console.log(e);
     }
+};
+
+function ReplaceWithPolyfill() {
+    'use-strict'; // For safari, and IE > 10
+    var parent = this.parentNode, i = arguments.length, currentNode;
+    if (!parent) return;
+    if (!i) // if there are no arguments
+        parent.removeChild(this);
+    while (i--) { // i-- decrements i and returns the value of i before the decrement
+        currentNode = arguments[i];
+        if (typeof currentNode !== 'object') {
+            currentNode = this.ownerDocument.createTextNode(currentNode);
+        } else if (currentNode.parentNode) {
+            currentNode.parentNode.removeChild(currentNode);
+        }
+        // the value of "i" below is after the decrement
+        if (!i) // if currentNode is the first argument (currentNode === arguments[0])
+            parent.replaceChild(currentNode, this);
+        else // if currentNode isn't the first
+            parent.insertBefore(this.previousSibling, currentNode);
+    }
+}
+if (!Element.prototype.replaceWith)
+    Element.prototype.replaceWith = ReplaceWithPolyfill;
+if (!CharacterData.prototype.replaceWith)
+    CharacterData.prototype.replaceWith = ReplaceWithPolyfill;
+if (!DocumentType.prototype.replaceWith)
+    DocumentType.prototype.replaceWith = ReplaceWithPolyfill;
+
+(function (arr) {
+    arr.forEach(function (item) {
+        if (item.hasOwnProperty('prepend')) {
+            return;
+        }
+        Object.defineProperty(item, 'prepend', {
+            configurable: true,
+            enumerable: true,
+            writable: true,
+            value: function prepend() {
+                var argArr = Array.prototype.slice.call(arguments),
+                    docFrag = document.createDocumentFragment();
+
+                argArr.forEach(function (argItem) {
+                    var isNode = argItem instanceof Node;
+                    docFrag.appendChild(isNode ? argItem : document.createTextNode(String(argItem)));
+                });
+
+                this.insertBefore(docFrag, this.firstChild);
+            }
+        });
+    });
+})([Element.prototype, Document.prototype, DocumentFragment.prototype]);
+
+// scroll to pure js
+
+var scrollTo = function (to, duration) {
+    var element = document.scrollingElement || document.documentElement,
+        start = element.scrollTop,
+        change = to - start,
+        startDate = +new Date(),
+        // t = current time
+        // b = start value
+        // c = change in value
+        // d = duration
+        easeInOutQuad = function (t, b, c, d) {
+            t /= d / 2;
+            if (t < 1) return c / 2 * t * t + b;
+            t--;
+            return -c / 2 * (t * (t - 2) - 1) + b;
+        },
+        animateScroll = function () {
+            const currentDate = +new Date();
+            const currentTime = currentDate - startDate;
+            element.scrollTop = parseInt(easeInOutQuad(currentTime, start, change, duration));
+            if (currentTime < duration) {
+                requestAnimationFrame(animateScroll);
+            }
+            else {
+                element.scrollTop = to;
+            }
+        };
+    animateScroll();
 };
