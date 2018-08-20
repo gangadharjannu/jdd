@@ -622,7 +622,7 @@ var jdd = {
         });
         document.querySelector('ul.toolbar').textContent = '';
 
-        diffs.forEach(function (diff, idx) {
+        diffs.forEach(function (diff) {
             document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').classList.add('selected');
             document.querySelector('pre.right div.line' + diff.path2.line + ' span.code').classList.add('selected');
         });
@@ -648,7 +648,7 @@ var jdd = {
         document.querySelector('ul.toolbar').appendChild(buttons);
         document.querySelector('ul.toolbar #nextButton').addEventListener('click', function (event) {
             event.preventDefault();
-            jdd.highlightNextDiff()
+            jdd.highlightNextDiff();
         });
         document.querySelector('ul.toolbar #prevButton').addEventListener('click', function (event) {
             event.preventDefault();
@@ -703,10 +703,10 @@ var jdd = {
      * Show the details of the specified diff
      */
     showDiffDetails: function (diffs) {
-        diffs.forEach(function (diff, idx) {
+        diffs.forEach(function (diff, index) {
             var li = document.createRange().createContextualFragment('<li>' + diff.msg + '</li>');
             document.querySelector('ul.toolbar').appendChild(li);
-            document.querySelectorAll('ul.toolbar li')[idx].addEventListener('click', function (event) {
+            document.querySelectorAll('ul.toolbar li')[index].addEventListener('click', function () {
                 jdd.scrollToDiff(diff);
             });
         });
@@ -730,7 +730,7 @@ var jdd = {
         var left = [];
         var right = [];
 
-        jdd.diffs.forEach(function (diff, index) {
+        jdd.diffs.forEach(function (diff) {
             document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').classList.add(diff.type);
             document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').classList.add('diff');
             if (left.indexOf(diff.path1.line) === -1) {
@@ -890,7 +890,7 @@ var jdd = {
                 Array.prototype.slice.call(document.querySelectorAll('span.code.diff.missing')).forEach(function (elem) {
                     elem.classList.add('missing_off');
                     elem.classList.remove('missing');
-                })
+                });
             } else {
                 Array.prototype.slice.call(document.querySelectorAll('span.code.diff.missing_off')).forEach(function (elem) {
                     elem.classList.add('missing');
@@ -901,7 +901,7 @@ var jdd = {
         typeCount > 0 && report.querySelector('input#showTypes').addEventListener('click', function (event) {
             if (!event.target.checked) {
                 Array.prototype.slice.call(document.querySelectorAll('span.code.diff.type')).forEach(function (elem) {
-                    elem.classList.add('type_off')
+                    elem.classList.add('type_off');
                     elem.classList.remove('type');
                 });
             } else {
@@ -911,7 +911,7 @@ var jdd = {
                 });
             }
         });
-        eqCount > 0 && report.querySelector('input#showEq').addEventListener('click', function (event) {
+        eqCount > 0 && report.querySelector('input#showEq').addEventListener('click', function () {
             if (!this.checked) {
                 Array.prototype.slice.call(document.querySelectorAll('span.code.diff.eq')).forEach(function (elem) {
                     elem.classList.add('eq_off');
@@ -1031,7 +1031,6 @@ var jdd = {
 
         // TODO: 
         var toolbarTop = document.getElementById('toolbar').getBoundingClientRect().top - 15;
-        debugger;
         var scrollTop = window.scrollY || window.pageYOffset || document.body.scrollTop + (document.documentElement && document.documentElement.scrollTop || 0);
         window.scroll(function () {
             if (toolbarTop < scrollTop) {
@@ -1115,15 +1114,17 @@ function ajax(url, data, callback, x) {
         x = new (this.XMLHttpRequest || ActiveXObject)('MSXML2.XMLHTTP.3.0');
         x.open(data ? 'POST' : 'GET', url, 1);
         x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        x.setRequestHeader("Content-Type", "application/json");
+        x.setRequestHeader('Content-Type', 'application/json');
         x.onreadystatechange = function () {
             x.readyState > 3 && callback && callback(JSON.parse(x.responseText), x);
         };
         data ? x.send(JSON.stringify(data)) : x.send();
     } catch (e) {
+        /*eslint-disable no-console */
         window.console && console.log(e);
+        /*eslint-enable no-console */
     }
-};
+}
 
 function ReplaceWithPolyfill() {
     'use-strict'; // For safari, and IE > 10
@@ -1178,34 +1179,34 @@ if (!DocumentType.prototype.replaceWith)
 
 // scroll to pure js
 
-var scrollTo = function (to, duration) {
-    var element = document.scrollingElement || document.documentElement,
-        start = element.scrollTop,
-        change = to - start,
-        startDate = +new Date(),
-        // t = current time
-        // b = start value
-        // c = change in value
-        // d = duration
-        easeInOutQuad = function (t, b, c, d) {
-            t /= d / 2;
-            if (t < 1) return c / 2 * t * t + b;
-            t--;
-            return -c / 2 * (t * (t - 2) - 1) + b;
-        },
-        animateScroll = function () {
-            const currentDate = +new Date();
-            const currentTime = currentDate - startDate;
-            element.scrollTop = parseInt(easeInOutQuad(currentTime, start, change, duration));
-            if (currentTime < duration) {
-                requestAnimationFrame(animateScroll);
-            }
-            else {
-                element.scrollTop = to;
-            }
-        };
-    animateScroll();
-};
+// var scrollTo = function (to, duration) {
+//     var element = document.scrollingElement || document.documentElement,
+//         start = element.scrollTop,
+//         change = to - start,
+//         startDate = +new Date(),
+//         // t = current time
+//         // b = start value
+//         // c = change in value
+//         // d = duration
+//         easeInOutQuad = function (t, b, c, d) {
+//             t /= d / 2;
+//             if (t < 1) return c / 2 * t * t + b;
+//             t--;
+//             return -c / 2 * (t * (t - 2) - 1) + b;
+//         },
+//         animateScroll = function () {
+//             var currentDate = +new Date();
+//             var currentTime = currentDate - startDate;
+//             element.scrollTop = parseInt(easeInOutQuad(currentTime, start, change, duration));
+//             if (currentTime < duration) {
+//                 requestAnimationFrame(animateScroll);
+//             }
+//             else {
+//                 element.scrollTop = to;
+//             }
+//         };
+//     animateScroll();
+// };
 
 // utilites
 // 
@@ -1231,8 +1232,8 @@ function getType(value) {
  * @param optional scope 
  */
 function forEach(array, callback, scope) {
-    for (var idx = 0; idx < array.length; idx++) {
-        callback.call(scope, array[idx], idx, array);
+    for (var index = 0; index < array.length; index++) {
+        callback.call(scope, array[index], index, array);
     }
 }
 
