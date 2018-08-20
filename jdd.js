@@ -41,7 +41,8 @@ var jdd = {
         config2.currentPath.push('/');
 
         var key;
-        var val;
+        // no un-used vars
+        // var val;
 
         if (data1.length < data2.length) {
             /*
@@ -50,7 +51,8 @@ var jdd = {
              */
             for (key in data2) {
                 if (data2.hasOwnProperty(key)) {
-                    val = data1[key];
+                    // no un-used vars
+                    // val = data1[key];
                     if (!data1.hasOwnProperty(key)) {
                         jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1),
                             config2, jdd.generatePath(config2, '/' + key),
@@ -66,7 +68,8 @@ var jdd = {
          */
         for (key in data1) {
             if (data1.hasOwnProperty(key)) {
-                val = data1[key];
+                // no un-used vars
+                // val = data1[key];
 
                 config1.currentPath.push(key);
 
@@ -97,7 +100,8 @@ var jdd = {
          */
         for (key in data2) {
             if (data2.hasOwnProperty(key)) {
-                val = data1[key];
+                // no un-used vars
+                // val = data1[key];
 
                 if (!data1.hasOwnProperty(key)) {
                     jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1),
@@ -114,18 +118,18 @@ var jdd = {
      */
     diffVal: function (val1, config1, val2, config2) {
 
-        if (_.isArray(val1)) {
+        if (getType(val1) === 'array') {
             jdd.diffArray(val1, config1, val2, config2);
-        } else if (_.isObject(val1)) {
-            if (_.isArray(val2) || _.isString(val2) || _.isNumber(val2) || _.isBoolean(val2) || _.isNull(val2)) {
+        } else if (getType(val1) === 'object') {
+            if (['array', 'string', 'number', 'boolean', 'null'].indexOf(getType(val2)) > -1) {
                 jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1),
                     config2, jdd.generatePath(config2),
                     'Both types should be objects', jdd.TYPE));
             } else {
                 jdd.findDiffs(config1, val1, config2, val2);
             }
-        } else if (_.isString(val1)) {
-            if (!_.isString(val2)) {
+        } else if (getType(val1) === 'string') {
+            if (getType(val2) !== 'string') {
                 jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1),
                     config2, jdd.generatePath(config2),
                     'Both types should be strings', jdd.TYPE));
@@ -134,8 +138,8 @@ var jdd = {
                     config2, jdd.generatePath(config2),
                     'Both sides should be equal strings', jdd.EQUALITY));
             }
-        } else if (_.isNumber(val1)) {
-            if (!_.isNumber(val2)) {
+        } else if (getType(val1) === 'number') {
+            if (getType(val2) !== 'number') {
                 jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1),
                     config2, jdd.generatePath(config2),
                     'Both types should be numbers', jdd.TYPE));
@@ -144,9 +148,9 @@ var jdd = {
                     config2, jdd.generatePath(config2),
                     'Both sides should be equal numbers', jdd.EQUALITY));
             }
-        } else if (_.isBoolean(val1)) {
+        } else if (getType(val1) === 'boolean') {
             jdd.diffBool(val1, config1, val2, config2);
-        } else if (_.isNull(val1) && !_.isNull(val2)) {
+        } else if (getType(val1) === 'null' && getType(val2) !== 'null') {
             jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1),
                 config2, jdd.generatePath(config2),
                 'Both types should be nulls', jdd.TYPE));
@@ -158,7 +162,7 @@ var jdd = {
      * issues so we handle them specially in this function.
      */
     diffArray: function (val1, config1, val2, config2) {
-        if (!_.isArray(val2)) {
+        if (getType(val2) !== 'array') {
             jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1),
                 config2, jdd.generatePath(config2),
                 'Both types should be arrays', jdd.TYPE));
@@ -176,7 +180,7 @@ var jdd = {
                     'Missing element <code>' + i + '</code> from the array on the left side', jdd.MISSING));
             }
         }
-        _.each(val1, function (arrayVal, index) {
+        val1.forEach(function (arrayVal, index) {
             if (val2.length <= index) {
                 jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1, '[' + index + ']'),
                     config2, jdd.generatePath(config2),
@@ -185,7 +189,7 @@ var jdd = {
                 config1.currentPath.push('/[' + index + ']');
                 config2.currentPath.push('/[' + index + ']');
 
-                if (_.isArray(val2)) {
+                if (getType(val2) === 'array') {
                     /*
                      * If both sides are arrays then we want to diff them.
                      */
@@ -201,7 +205,7 @@ var jdd = {
      * We handle boolean values specially because we can show a nicer message for them.
      */
     diffBool: function (val1, config1, val2, config2) {
-        if (!_.isBoolean(val2)) {
+        if (getType(val2) !== 'boolean') {
             jdd.diffs.push(jdd.generateDiff(config1, jdd.generatePath(config1),
                 config2, jdd.generatePath(config2),
                 'Both types should be booleans', jdd.TYPE));
@@ -223,7 +227,7 @@ var jdd = {
      * the data about this object.
      */
     formatAndDecorate: function (/*Object*/ config, /*Object*/ data) {
-        if (_.isArray(data)) {
+        if (getType(data) === 'array') {
             jdd.formatAndDecorateArray(config, data);
             return;
         }
@@ -238,8 +242,7 @@ var jdd = {
          * when we compare values.  However, if the second has more then
          * we need to catch that here.
          */
-
-        _.each(props, function (key) {
+        props.forEach(function (key) {
             config.out += jdd.newLine(config) + jdd.getTabs(config.indent) + '"' + jdd.unescapeString(key) + '": ';
             config.currentPath.push(key);
             config.paths.push({
@@ -266,8 +269,7 @@ var jdd = {
          * when we compare values.  However, if the second has more then
          * we need to catch that here.
          */
-
-        _.each(data, function (arrayVal, index) {
+        data.forEach(function (arrayVal, index) {
             config.out += jdd.newLine(config) + jdd.getTabs(config.indent);
             config.paths.push({
                 path: jdd.generatePath(config, '[' + index + ']'),
@@ -371,11 +373,11 @@ var jdd = {
      * Format a specific value into the output stream.
      */
     formatVal: function (val, config) {
-        if (_.isArray(val)) {
+        if (getType(val) === 'array') {
             config.out += '[';
 
             config.indent++;
-            _.each(val, function (arrayVal, index) {
+            val.forEach(function (arrayVal, index) {
                 config.out += jdd.newLine(config) + jdd.getTabs(config.indent);
                 config.paths.push({
                     path: jdd.generatePath(config, '[' + index + ']'),
@@ -390,15 +392,15 @@ var jdd = {
             config.indent--;
 
             config.out += jdd.newLine(config) + jdd.getTabs(config.indent) + ']' + ',';
-        } else if (_.isObject(val)) {
+        } else if (getType(val) === 'object') {
             jdd.formatAndDecorate(config, val);
-        } else if (_.isString(val)) {
+        } else if (getType(val) === 'string') {
             config.out += '"' + jdd.unescapeString(val) + '",';
-        } else if (_.isNumber(val)) {
+        } else if (getType(val) === 'number') {
             config.out += val + ',';
-        } else if (_.isBoolean(val)) {
+        } else if (getType(val) === 'boolean') {
             config.out += val + ',';
-        } else if (_.isNull(val)) {
+        } else if (getType(val) === 'null') {
             config.out += 'null,';
         }
     },
@@ -434,7 +436,7 @@ var jdd = {
      */
     generatePath: function (config, prop) {
         var s = '';
-        _.each(config.currentPath, function (path) {
+        config.currentPath.forEach(function (path) {
             s += path;
         });
 
@@ -487,12 +489,10 @@ var jdd = {
         if (path2 !== '/' && path2.charAt(path2.length - 1) === '/') {
             path2 = path2.substring(0, path2.length - 1);
         }
-
-        var pathObj1 = _.find(config1.paths, function (path) {
+        var pathObj1 = config1.paths.find(function (path) {
             return path.path === path1;
         });
-
-        var pathObj2 = _.find(config2.paths, function (path) {
+        var pathObj2 = config2.paths.find(function (path) {
             return path.path === path2;
         });
 
@@ -553,7 +553,7 @@ var jdd = {
      * Format the output pre tags.
      */
     formatPRETags: function () {
-        _.each(document.getElementsByTagName('pre'), function (pre) {
+        forEach(document.getElementsByTagName('pre'), function (pre) {
             var codeBlock = document.createElement('pre');
             codeBlock.className = 'codeBlock';
             var lineNumbers = document.createElement('div');
@@ -571,8 +571,7 @@ var jdd = {
                 codeLines.appendChild(document.createRange().createContextualFragment(div));
             };
 
-            var lines = pre.textContent.split('\n');
-            _.each(lines, addLine);
+            pre.textContent.split('\n').forEach(addLine);
 
             codeBlock.className += (' ' + pre.className);
             codeBlock.id = pre.id;
@@ -589,7 +588,7 @@ var jdd = {
      * Format the text edits which handle the JSON input
      */
     formatTextAreas: function () {
-        _.each(document.createRange().createContextualFragment('textarea'), function (textarea) {
+        forEach(document.getElementsByTagName('textarea'), function (textarea) {
             var codeBlock = document.createRange().createContextualFragment('<div class="codeBlock"></div>');
             var lineNumbers = document.createRange().createContextualFragment('<div class="gutter"></div>');
             codeBlock.appendChild(lineNumbers);
@@ -598,8 +597,7 @@ var jdd = {
                 lineNumbers.appendChild(document.createRange().createContextualFragment('<span class="line-number">' + (index + 1) + '.</span>'));
             };
 
-            var lines = textarea.value.split('\n');
-            _.each(lines, addLine);
+            textarea.value.split('\n').forEach(addLine);
 
             textarea.replaceWith(codeBlock);
             codeBlock.append(textarea);
@@ -607,7 +605,7 @@ var jdd = {
     },
 
     handleDiffClick: function (line, side) {
-        var diffs = _.filter(jdd.diffs, function (diff) {
+        var diffs = jdd.diffs.filter(function (diff) {
             if (side === jdd.LEFT) {
                 return line === diff.path1.line;
             } else if (side === jdd.RIGHT) {
@@ -624,19 +622,19 @@ var jdd = {
         });
         document.querySelector('ul.toolbar').textContent = '';
 
-        _.each(diffs, function (diff, idx) {
+        diffs.forEach(function (diff, idx) {
             document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').classList.add('selected');
             document.querySelector('pre.right div.line' + diff.path2.line + ' span.code').classList.add('selected');
         });
 
         if (side === jdd.LEFT || side === jdd.RIGHT) {
-            jdd.currentDiff = _.findIndex(jdd.diffs, function (diff) {
+            jdd.currentDiff = jdd.diffs.findIndex(function (diff) {
                 return diff.path1.line === line;
             });
         }
 
         if (jdd.currentDiff === -1) {
-            jdd.currentDiff = _.findIndex(jdd.diffs, function (diff) {
+            jdd.currentDiff = jdd.diffs.findIndex(function (diff) {
                 return diff.path2.line === line;
             });
         }
@@ -705,7 +703,7 @@ var jdd = {
      * Show the details of the specified diff
      */
     showDiffDetails: function (diffs) {
-        _.each(diffs, function (diff, idx) {
+        diffs.forEach(function (diff, idx) {
             var li = document.createRange().createContextualFragment('<li>' + diff.msg + '</li>');
             document.querySelector('ul.toolbar').appendChild(li);
             document.querySelectorAll('ul.toolbar li')[idx].addEventListener('click', function (event) {
@@ -732,10 +730,10 @@ var jdd = {
         var left = [];
         var right = [];
 
-        _.each(jdd.diffs, function (diff, index) {
+        jdd.diffs.forEach(function (diff, index) {
             document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').classList.add(diff.type);
             document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').classList.add('diff');
-            if (_.indexOf(left, diff.path1.line) === -1) {
+            if (left.indexOf(diff.path1.line) === -1) {
                 document.querySelector('pre.left div.line' + diff.path1.line + ' span.code').addEventListener('click', function () {
                     jdd.handleDiffClick(diff.path1.line, jdd.LEFT);
                 });
@@ -744,7 +742,7 @@ var jdd = {
 
             document.querySelector('pre.right div.line' + diff.path2.line + ' span.code').classList.add(diff.type);
             document.querySelector('pre.right div.line' + diff.path2.line + ' span.code').classList.add('diff');
-            if (_.indexOf(right, diff.path2.line) === -1) {
+            if (right.indexOf(diff.path2.line) === -1) {
                 document.querySelector('pre.right div.line' + diff.path2.line + ' span.code').addEventListener('click', function () {
                     jdd.handleDiffClick(diff.path2.line, jdd.RIGHT);
                 });
@@ -763,7 +761,7 @@ var jdd = {
      */
     validateInput: function (json, side) {
         try {
-            var result = jsl.parser.parse(json);
+            jsl.parser.parse(json);
 
             if (side === jdd.LEFT) {
                 document.getElementById('errorLeft').textContent = '';
@@ -796,7 +794,7 @@ var jdd = {
     handleFiles: function (files, side) {
         var reader = new FileReader();
 
-        reader.onload = (function (theFile) {
+        reader.onload = (function () {
             return function (e) {
                 if (side === jdd.LEFT) {
                     document.getElementById('textarealeft').value = e.target.result;
@@ -835,8 +833,7 @@ var jdd = {
         var typeCount = 0;
         var eqCount = 0;
         var missingCount = 0;
-
-        _.each(jdd.diffs, function (diff) {
+        jdd.diffs.forEach(function (diff) {
             if (diff.type === jdd.EQUALITY) {
                 eqCount++;
             } else if (diff.type === jdd.MISSING) {
@@ -1209,3 +1206,130 @@ var scrollTo = function (to, duration) {
         };
     animateScroll();
 };
+
+// utilites
+// 
+/**
+ * Fixing typeof
+ * takes value and returns type of value
+ * @param  value 
+ * return typeof value
+ */
+function getType(value) {
+    if ((function () { return value && (value !== this); }).call(value)) {
+        //fallback on 'typeof' for truthy primitive values
+        return typeof value;
+    }
+    return ({}).toString.call(value).match(/\s([a-z|A-Z]+)/)[1].toLowerCase();
+}
+/**
+ * Iterate over array of objects and call given callback for each item in the array
+ * Optionally may take this as scope
+ * 
+ * @param array 
+ * @param callback 
+ * @param optional scope 
+ */
+function forEach(array, callback, scope) {
+    for (var idx = 0; idx < array.length; idx++) {
+        callback.call(scope, array[idx], idx, array);
+    }
+}
+
+// polyfills
+
+// Array.prototype.find
+// https://tc39.github.io/ecma262/#sec-array.prototype.find
+if (!Array.prototype.find) {
+    Object.defineProperty(Array.prototype, 'find', {
+        value: function (predicate) {
+            // 1. Let O be ? ToObject(this value).
+            if (this == null) {
+                throw new TypeError('"this" is null or not defined');
+            }
+
+            var o = Object(this);
+
+            // 2. Let len be ? ToLength(? Get(O, "length")).
+            var len = o.length >>> 0;
+
+            // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+            if (typeof predicate !== 'function') {
+                throw new TypeError('predicate must be a function');
+            }
+
+            // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
+            var thisArg = arguments[1];
+
+            // 5. Let k be 0.
+            var k = 0;
+
+            // 6. Repeat, while k < len
+            while (k < len) {
+                // a. Let Pk be ! ToString(k).
+                // b. Let kValue be ? Get(O, Pk).
+                // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+                // d. If testResult is true, return kValue.
+                var kValue = o[k];
+                if (predicate.call(thisArg, kValue, k, o)) {
+                    return kValue;
+                }
+                // e. Increase k by 1.
+                k++;
+            }
+
+            // 7. Return undefined.
+            return undefined;
+        },
+        configurable: true,
+        writable: true
+    });
+}
+
+// Array.prototype.findIndex
+// https://tc39.github.io/ecma262/#sec-array.prototype.findIndex
+if (!Array.prototype.findIndex) {
+    Object.defineProperty(Array.prototype, 'findIndex', {
+        value: function (predicate) {
+            // 1. Let O be ? ToObject(this value).
+            if (this == null) {
+                throw new TypeError('"this" is null or not defined');
+            }
+
+            var o = Object(this);
+
+            // 2. Let len be ? ToLength(? Get(O, "length")).
+            var len = o.length >>> 0;
+
+            // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+            if (typeof predicate !== 'function') {
+                throw new TypeError('predicate must be a function');
+            }
+
+            // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
+            var thisArg = arguments[1];
+
+            // 5. Let k be 0.
+            var k = 0;
+
+            // 6. Repeat, while k < len
+            while (k < len) {
+                // a. Let Pk be ! ToString(k).
+                // b. Let kValue be ? Get(O, Pk).
+                // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+                // d. If testResult is true, return k.
+                var kValue = o[k];
+                if (predicate.call(thisArg, kValue, k, o)) {
+                    return k;
+                }
+                // e. Increase k by 1.
+                k++;
+            }
+
+            // 7. Return -1.
+            return -1;
+        },
+        configurable: true,
+        writable: true
+    });
+}
